@@ -1,13 +1,7 @@
 import os
 
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
-BOT_TOKEN = os.getenv("8447879722:AAEJwwzqM58bobKqiZqQ6U-dqv3JmvCNZbI")
+print("TOKEN:", BOT_TOKEN)
 
-# آیدی عددی ادمین
 ADMIN_ID = 8255361263
-
-
-if not BOT_TOKEN:
-    raise ValueError(
-        "BOT_TOKEN تنظیم نشده است!"
-    )
