@@ -1,7 +1,6 @@
 from aiogram import Router, types
 from aiogram.filters import CommandStart
 
-
 from database import (
     find_file,
     get_channels
@@ -13,11 +12,12 @@ from keyboards.buttons import join_keyboard
 router = Router()
 
 
+user_chapters = {}
+
 
 async def is_member(bot, user_id):
 
     channels = get_channels()
-
 
     for channel in channels:
 
@@ -28,26 +28,21 @@ async def is_member(bot, user_id):
                 user_id
             )
 
-
             if member.status in [
                 "left",
                 "kicked"
             ]:
                 return False
 
-
         except:
 
             return False
-
 
     return True
 
 
 
-@router.message(
-    CommandStart()
-)
+@router.message(CommandStart())
 async def start_handler(
     message: types.Message
 ):
@@ -55,18 +50,13 @@ async def start_handler(
     args = message.text.split()
 
 
-    if len(args) == 1:
+    if len(args) > 1:
 
-        await message.answer(
-            "سلام 👋\n"
-            "لینک چپتر را از کانال باز کنید."
-        )
+        code = args[1]
 
-        return
-
-
-
-    code = args[1]
+        user_chapters[
+            message.from_user.id
+        ] = code
 
 
     if not await is_member(
@@ -74,9 +64,8 @@ async def start_handler(
         message.from_user.id
     ):
 
-
         await message.answer(
-            "برای دریافت فایل ابتدا عضو کانال‌ها شوید:",
+            "برای دریافت چپتر ابتدا عضو کانال‌ها شوید:",
             reply_markup=join_keyboard(
                 get_channels()
             )
@@ -85,26 +74,27 @@ async def start_handler(
         return
 
 
-
-    file_id = find_file(
-        code
+    code = user_chapters.get(
+        message.from_user.id
     )
 
 
-    if file_id:
+    if code:
 
+        file_id = find_file(code)
 
-        await message.answer_document(
-            document=file_id,
-            caption=f"📖 Chapter {code}"
-        )
+        if file_id:
 
+            await message.answer_document(
+                file_id,
+                caption=f"📖 Chapter {code}"
+            )
 
-    else:
+        else:
 
-        await message.answer(
-            "❌ چپتر پیدا نشد."
-        )
+            await message.answer(
+                "❌ چپتر پیدا نشد."
+            )
 
 
 
@@ -120,14 +110,39 @@ async def check_join(
         callback.from_user.id
     ):
 
-        await callback.message.answer(
-            "✅ عضویت تایید شد.\n"
-            "حالا دوباره لینک چپتر را باز کن."
+        code = user_chapters.get(
+            callback.from_user.id
         )
+
+
+        if code:
+
+            file_id = find_file(code)
+
+
+            if file_id:
+
+                await callback.message.answer_document(
+                    file_id,
+                    caption=f"📖 Chapter {code}"
+                )
+
+            else:
+
+                await callback.message.answer(
+                    "❌ فایل موجود نیست."
+                )
+
+        else:
+
+            await callback.message.answer(
+                "لینک چپتر را دوباره باز کن."
+            )
+
 
     else:
 
         await callback.answer(
-            "هنوز عضو همه کانال‌ها نشدی!",
+            "هنوز عضو کانال‌ها نشدی!",
             show_alert=True
-)
+        )
